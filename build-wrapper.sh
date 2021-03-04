@@ -10,11 +10,12 @@ readonly SCRIPT_TYPE=$(scriptType)
 if [ "${SCRIPT_TYPE}" = 'build' ]; then
   readonly BUILD_COMMAND=${BUILD_COMMAND}
   readonly PARENT_JOB_DIR=${PARENT_JOB_DIR:-'/parent_job/'}
+  readonly HARMONIA_HOME=${HARMONIA_HOME}
+  readonly HARMONIA_DEBUG=${HARMONIA_DEBUG}
 fi
 readonly BUILD_ID=${BUILD_ID}
 readonly JOB_NAME=${JOB_NAME}
 readonly PRINT_BUILD_ENV=${PRINT_BUILD_ENV:-'true'}
-readonly HARMONIA_DEBUG=${HARMONIA_DEBUG}
 readonly MAVEN_VERBOSE=${MAVEN_VERBOSE}
 readonly MAVEN_SETTINGS_XML=${MAVEN_SETTINGS_XML:-'/opt/tools/settings.xml'}
 if [ "${SCRIPT_TYPE}" = 'mvn' ]; then
