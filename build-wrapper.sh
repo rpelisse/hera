@@ -10,7 +10,7 @@ readonly SCRIPT_TYPE=$(scriptType)
 if [ "${SCRIPT_TYPE}" = 'build' ]; then
   readonly BUILD_COMMAND=${BUILD_COMMAND}
   readonly PARENT_JOB_DIR=${PARENT_JOB_DIR:-'/parent_job/'}
-  readonly HARMONIA_HOME="${WORKSPACE}/harmonia"
+  readonly HARMONIA_HOME=${HARMONIA_HOME:-"${WORKSPACE}/harmonia/"}
   readonly HARMONIA_DEBUG=${HARMONIA_DEBUG}
 fi
 readonly BUILD_ID=${BUILD_ID}
@@ -57,7 +57,6 @@ printEnv
 if [ "${SCRIPT_TYPE}" = 'build' ]; then
   is_defined "${HARMONIA_HOME}" 'HARMONIA_HOME is undefined'
   is_dir "${HARMONIA_HOME}" "Provided HARMONIA_HOME is invalid: ${HARMONIA_HOME}"
-  readonly HARMONIA_HOME=${HARMONIA_HOME:-"${WORKSPACE}/harmonia/"}
 
   if [ "${BUILD_COMMAND}" = 'testsuite' ]; then
     is_dir "${PARENT_JOB_DIR}"
