@@ -24,6 +24,7 @@ echo "HERA_HOME: ${HERA_HOME}"
 source "${HERA_HOME}/library.sh"
 
 printJobConfig
+printEnv
 
 for var in "${HERA_HOME}" "${WORKSPACE}"
 do
@@ -33,12 +34,12 @@ done
 is_defined "${JOB_NAME}" 'No BUILD_NAME provided'
 is_defined "${BUILD_ID}" 'No BUILD_ID provided'
 
-printJobConfig
+#printJobConfig
 
 cd "${WORKSPACE}" || exit "${FAIL_TO_SET_DEFAULT_TO_WORKSPACE_CODE}"
 
 export USER='jenkins'
-printEnv
+#printEnv
 
 is_defined "${HARMONIA_HOME}" 'HARMONIA_HOME is undefined'
 is_dir "${HARMONIA_HOME}" "Provided HARMONIA_HOME is invalid: ${HARMONIA_HOME}"
