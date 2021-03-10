@@ -32,6 +32,7 @@ run_ssh "podman exec \
         -e WORKSPACE="${WORKSPACE}" \
         -e JAVA_HOME="${JAVA_HOME}" \
         -e HARMONIA_SCRIPT=${HARMONIA_SCRIPT} \
+        -e TO_ADDRESS=${TO_ADDRESS} \
         -e MAVEN_HOME="${MAVEN_HOME}" \
         -e MAVEN_OPTS='"${MAVEN_OPTS}"' \
         -e MAVEN_GOALS='"${MAVEN_GOALS}"' \
