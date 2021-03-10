@@ -35,7 +35,6 @@ run_ssh "podman exec \
         -e TO_ADDRESS="${TO_ADDRESS}" \
         -e RULE_NAME="${RULE_NAME}" \
         -e TO_ADDRESS="${TO_ADDRESS}" \
-        -e TARGET_DIR="${TARGET_DIR}" \
         -e REPORT_TITLE="\'${REPORT_TITLE}\'" \
         -e LOGGER_PROJECT_CODE="${LOGGER_PROJECT_CODE}" \
         -e MAVEN_HOME="${MAVEN_HOME}" \
