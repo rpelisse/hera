@@ -142,7 +142,7 @@ printJobConfig() {
 
 printEnv() {
   if [ -n "${PRINT_BUILD_ENV}" ]; then
-    echo "=== ${JOB_NAME} (Build #${BUILD_ID} environnement ==="
+    echo "=== ${JOB_NAME} (Build #${BUILD_ID} environnement )==="
     env
     echo '===================================================='
   fi
