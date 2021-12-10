@@ -4,14 +4,21 @@ readonly PARENT_JOB_NAME=${PARENT_JOB_NAME}
 readonly PARENT_JOB_BUILD_ID=${PARENT_JOB_BUILD_ID}
 readonly BUILD_PODMAN_IMAGE=${BUILD_PODMAN_IMAGE:-'localhost/automatons'}
 readonly JENKINS_HOME_DIR=${JENKINS_HOME_DIR:-'/home/jenkins/'}
+readonly JENKINS_CONTAINER_HOME_DIR=${JENKINS_CONTAINER_HOME_DIR:-'/var/jenkins_home/'}
 readonly JENKINS_ACCOUNT_DIR=${JENKINS_ACCOUNT_DIR:-'/home/jenkins'}
-readonly JENKINS_UID=${JENKINS_UID:-'1000'}
-readonly JENKINS_GUID=${JENKINS_GUID:-"${JENKINS_UID}"}
+readonly CONTAINER_USERNAME=${CONTAINER_USERNAME:-'jenkins'}
+readonly CONTAINER_UID=${CONTAINER_UID:-'1000'}
+readonly CONTAINER_GUID=${CONTAINER_GUID:-"${CONTAINER_UID}"}
 readonly JOB_NAME=${JOB_NAME}
 readonly BUILD_ID=${BUILD_ID}
 readonly CONTAINER_SERVER_HOSTNAME=${CONTAINER_SERVER_HOSTNAME:-'olympus'}
 readonly CONTAINER_SERVER_IP=${CONTAINER_SERVER_IP:-'10.88.0.1'}
-set -u
+readonly TOOLS_DIR=${TOOLS_DIR:-'/opt'}
+readonly TOOLS_MOUNT=${TOOLS_MOUNT:-'/opt'}
+readonly PUBLISHED_PORTS=${PUBLISHED_PORTS:-''}
+readonly SYSTEMD_ENABLED=${SYSTEMD_ENABLED:-''}
+
+set -euo pipefail
 
 add_parent_volume_if_provided() {
   if [ -n "${PARENT_JOB_NAME}" ]; then
@@ -23,6 +30,39 @@ add_parent_volume_if_provided() {
     fi
   fi
 }
+
+add_ports_if_provided() {
+ if [ -n "${PUBLISHED_PORTS}" ]; then
+   echo -p "${PUBLISHED_PORTS}"
+ fi
+}
+
+systemd_if_enabled() {
+  if [ -n "${SYSTEMD_ENABLED}" ]; then
+    echo "--systemd=true --privileged=true -v /sys/fs/cgroup:/sys/fs/cgroup:ro"
+  fi
+}
+
+mount_tools_if_provided() {
+ if [ -d "${TOOLS_DIR}" ]; then
+   if [ -n "${TOOLS_MOUNT}" ]; then
+     echo "-v ${TOOLS_DIR}:${TOOLS_MOUNT}:ro"
+   fi
+ else
+   echo "Warning: Provided tools dir ${TOOLS_DIR} does not exist, won't be added to container's volume." >&2
+ fi
+}
+
+container_user_if_enabled() {
+  if [ -n "${CONTAINER_USERNAME}" ]; then
+    if [ -n "${CONTAINER_UID}" ]; then
+      if [ -n "${CONTAINER_GUID}" ]; then
+         echo "--userns=keep-id -u ${CONTAINER_UID}:${CONTAINER_GUID}"
+      fi
+    fi
+  fi
+}
+
 
 # shellcheck source=./library.sh
 source "${HERA_HOME}"/library.sh
@@ -41,14 +81,12 @@ readonly CONTAINER_COMMAND=${CONTAINER_COMMAND:-"${WORKSPACE}/hera/wait.sh"}
 
 # shellcheck disable=SC2016
 run_ssh "podman run \
-            --userns=keep-id -u ${JENKINS_UID}:${JENKINS_GUID} \
-            --name "${CONTAINER_TO_RUN_NAME}" \
-             --add-host=${CONTAINER_SERVER_HOSTNAME}:${CONTAINER_SERVER_IP}  \
-            --rm $(add_parent_volume_if_provided) \
-            --workdir ${WORKSPACE} \
-            -v "${JOB_DIR}":${WORKSPACE}:rw \
-            -v /opt/:/opt/:ro \
-            -v "${JENKINS_ACCOUNT_DIR}/.ssh/":/var/jenkins_home/.ssh/:ro \
+            --name "${CONTAINER_TO_RUN_NAME}" $(container_user_if_enabled) \
+            --add-host=${CONTAINER_SERVER_HOSTNAME}:${CONTAINER_SERVER_IP}  \
+            --rm $(add_parent_volume_if_provided) $(systemd_if_enabled) \
+            --workdir ${WORKSPACE} $(add_ports_if_provided) \
+            -v "${JOB_DIR}":${WORKSPACE}:rw $(mount_tools_if_provided)\
+            -v "${JENKINS_ACCOUNT_DIR}/.ssh/":/var/jenkins_home/.ssh/:rw \
             -v "${JENKINS_ACCOUNT_DIR}/.gitconfig":/var/jenkins_home/.gitconfig:ro \
             -v "${JENKINS_ACCOUNT_DIR}/.netrc":/var/jenkins_home/.netrc:ro \
-	        -d ${BUILD_PODMAN_IMAGE} '${CONTAINER_COMMAND}'"
+            -d ${BUILD_PODMAN_IMAGE} '${CONTAINER_COMMAND}'"

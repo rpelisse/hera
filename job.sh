@@ -54,4 +54,6 @@ run_ssh "podman exec \
         -e NEXUS_CREDENTIALS=${NEXUS_CREDENTIALS} \
         -e GIT_REPOSITORY_URL="${GIT_REPOSITORY_URL}" \
         -e GIT_REPOSITORY_BRANCH="${GIT_REPOSITORY_BRANCH}" \
-        -ti ${CONTAINER_NAME} '${BUILD_SCRIPT}' ${@}"
+        -e TOOLS_DIR="${TOOLS_DIR}" \
+        -e TOOLS_MOUNT="${TOOLS_MOUNT}" \
+        -ti ${CONTAINER_NAME} '${BUILD_SCRIPT}' ${@} | sed 's/\x1B\[[0-9;]\{1,\}[A-Za-z]//g'"
