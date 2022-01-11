@@ -11,7 +11,10 @@ readonly JOB_NAME=${JOB_NAME}
 readonly BUILD_ID=${BUILD_ID}
 readonly CONTAINER_SERVER_HOSTNAME=${CONTAINER_SERVER_HOSTNAME:-'olympus'}
 readonly CONTAINER_SERVER_IP=${CONTAINER_SERVER_IP:-'10.88.0.1'}
-set -u
+readonly TOOLS_DIR=${TOOLS_DIR:-'/opt'}
+readonly TOOLS_MOUNT=${TOOLS_MOUNT:-'/opt'}
+
+set -euo pipefail
 
 add_parent_volume_if_provided() {
   if [ -n "${PARENT_JOB_NAME}" ]; then
@@ -22,6 +25,16 @@ add_parent_volume_if_provided() {
       exit 1
     fi
   fi
+}
+
+mount_tools_if_provided() {
+ if [ -d "${TOOLS_DIR}" ]; then
+   if [ -n "${TOOLS_MOUNT}" ]; then
+     echo "-v ${TOOLS_DIR}:${TOOLS_MOUNT}:ro"
+   fi
+ else
+   echo "Warning: Provided tools dir ${TOOLS_DIR} does not exist, won't be added to container's volume." >&2
+ fi
 }
 
 # shellcheck source=./library.sh
@@ -46,8 +59,7 @@ run_ssh "podman run \
              --add-host=${CONTAINER_SERVER_HOSTNAME}:${CONTAINER_SERVER_IP}  \
             --rm $(add_parent_volume_if_provided) \
             --workdir ${WORKSPACE} \
-            -v "${JOB_DIR}":${WORKSPACE}:rw \
-            -v /opt/:/opt/:ro \
+            -v "${JOB_DIR}":${WORKSPACE}:rw $(mount_tools_if_provided)\
             -v "${JENKINS_ACCOUNT_DIR}/.ssh/":/var/jenkins_home/.ssh/:rw \
             -v "${JENKINS_ACCOUNT_DIR}/.gitconfig":/var/jenkins_home/.gitconfig:ro \
             -v "${JENKINS_ACCOUNT_DIR}/.netrc":/var/jenkins_home/.netrc:ro \
