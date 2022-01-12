@@ -13,6 +13,7 @@ readonly CONTAINER_SERVER_HOSTNAME=${CONTAINER_SERVER_HOSTNAME:-'olympus'}
 readonly CONTAINER_SERVER_IP=${CONTAINER_SERVER_IP:-'10.88.0.1'}
 readonly TOOLS_DIR=${TOOLS_DIR:-'/opt'}
 readonly TOOLS_MOUNT=${TOOLS_MOUNT:-'/opt'}
+readonly PUBLISHED_PORTS=${PUBLISHED_PORTS:-''}
 
 set -euo pipefail
 
@@ -25,6 +26,12 @@ add_parent_volume_if_provided() {
       exit 1
     fi
   fi
+}
+
+add_ports_if_provided() {
+ if [ -n "${PUBLISHED_PORTS}" ]; then
+   echo -p "${PUBLISHED_PORTS}"
+ fi
 }
 
 mount_tools_if_provided() {
@@ -58,7 +65,7 @@ run_ssh "podman run \
             --name "${CONTAINER_TO_RUN_NAME}" \
              --add-host=${CONTAINER_SERVER_HOSTNAME}:${CONTAINER_SERVER_IP}  \
             --rm $(add_parent_volume_if_provided) \
-            --workdir ${WORKSPACE} \
+            --workdir ${WORKSPACE} $(add_ports_if_provided) \
             -v "${JOB_DIR}":${WORKSPACE}:rw $(mount_tools_if_provided)\
             -v "${JENKINS_ACCOUNT_DIR}/.ssh/":/var/jenkins_home/.ssh/:rw \
             -v "${JENKINS_ACCOUNT_DIR}/.gitconfig":/var/jenkins_home/.gitconfig:ro \
