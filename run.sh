@@ -4,9 +4,11 @@ readonly PARENT_JOB_NAME=${PARENT_JOB_NAME}
 readonly PARENT_JOB_BUILD_ID=${PARENT_JOB_BUILD_ID}
 readonly BUILD_PODMAN_IMAGE=${BUILD_PODMAN_IMAGE:-'localhost/automatons'}
 readonly JENKINS_HOME_DIR=${JENKINS_HOME_DIR:-'/home/jenkins/'}
+readonly JENKINS_CONTAINER_HOME_DIR=${JENKINS_CONTAINER_HOME_DIR:-'/var/jenkins_home/'}
 readonly JENKINS_ACCOUNT_DIR=${JENKINS_ACCOUNT_DIR:-'/home/jenkins'}
-readonly JENKINS_UID=${JENKINS_UID:-'1000'}
-readonly JENKINS_GUID=${JENKINS_GUID:-"${JENKINS_UID}"}
+readonly CONTAINER_USERNAME=${CONTAINER_USERNAME:-'jenkins'}
+readonly CONTAINER_UID=${CONTAINER_UID:-'1000'}
+readonly CONTAINER_GUID=${CONTAINER_GUID:-"${CONTAINER_UID}"}
 readonly JOB_NAME=${JOB_NAME}
 readonly BUILD_ID=${BUILD_ID}
 readonly CONTAINER_SERVER_HOSTNAME=${CONTAINER_SERVER_HOSTNAME:-'olympus'}
@@ -37,7 +39,7 @@ add_ports_if_provided() {
 
 systemd_if_enabled() {
   if [ -n "${SYSTEMD_ENABLED}" ]; then
-    echo "--systemd=true --privileged=true"
+    echo "--systemd=true --privileged=true -v /sys/fs/cgroup:/sys/fs/cgroup:ro"
   fi
 }
 
@@ -50,6 +52,17 @@ mount_tools_if_provided() {
    echo "Warning: Provided tools dir ${TOOLS_DIR} does not exist, won't be added to container's volume." >&2
  fi
 }
+
+container_user_if_enabled() {
+  if [ -n "${CONTAINER_USERNAME}" ]; then
+    if [ -n "${CONTAINER_UID}" ]; then
+      if [ -n "${CONTAINER_GUID}" ]; then
+         echo "--userns=keep-id -u ${CONTAINER_UID}:${CONTAINER_GUID}"
+      fi
+    fi
+  fi
+}
+
 
 # shellcheck source=./library.sh
 source "${HERA_HOME}"/library.sh
@@ -68,8 +81,7 @@ readonly CONTAINER_COMMAND=${CONTAINER_COMMAND:-"${WORKSPACE}/hera/wait.sh"}
 
 # shellcheck disable=SC2016
 run_ssh "podman run \
-            --userns=keep-id -u ${JENKINS_UID}:${JENKINS_GUID} \
-            --name "${CONTAINER_TO_RUN_NAME}" \
+            --name "${CONTAINER_TO_RUN_NAME}" $(container_user_if_enabled) \
             --add-host=${CONTAINER_SERVER_HOSTNAME}:${CONTAINER_SERVER_IP}  \
             --rm $(add_parent_volume_if_provided) $(systemd_if_enabled) \
             --workdir ${WORKSPACE} $(add_ports_if_provided) \
