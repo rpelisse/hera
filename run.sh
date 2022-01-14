@@ -14,6 +14,7 @@ readonly CONTAINER_SERVER_IP=${CONTAINER_SERVER_IP:-'10.88.0.1'}
 readonly TOOLS_DIR=${TOOLS_DIR:-'/opt'}
 readonly TOOLS_MOUNT=${TOOLS_MOUNT:-'/opt'}
 readonly PUBLISHED_PORTS=${PUBLISHED_PORTS:-''}
+readonly SYSTEMD_ENABLED=${SYSTEMD_ENABLED:-''}
 
 set -euo pipefail
 
@@ -32,6 +33,12 @@ add_ports_if_provided() {
  if [ -n "${PUBLISHED_PORTS}" ]; then
    echo -p "${PUBLISHED_PORTS}"
  fi
+}
+
+systemd_if_enabled() {
+  if [ -n "${SYSTEMD_ENABLED}" ]; then
+    echo "--systemd=true --privileged=true"
+  fi
 }
 
 mount_tools_if_provided() {
@@ -63,11 +70,11 @@ readonly CONTAINER_COMMAND=${CONTAINER_COMMAND:-"${WORKSPACE}/hera/wait.sh"}
 run_ssh "podman run \
             --userns=keep-id -u ${JENKINS_UID}:${JENKINS_GUID} \
             --name "${CONTAINER_TO_RUN_NAME}" \
-             --add-host=${CONTAINER_SERVER_HOSTNAME}:${CONTAINER_SERVER_IP}  \
-            --rm $(add_parent_volume_if_provided) \
+            --add-host=${CONTAINER_SERVER_HOSTNAME}:${CONTAINER_SERVER_IP}  \
+            --rm $(add_parent_volume_if_provided) $(systemd_if_enabled) \
             --workdir ${WORKSPACE} $(add_ports_if_provided) \
             -v "${JOB_DIR}":${WORKSPACE}:rw $(mount_tools_if_provided)\
             -v "${JENKINS_ACCOUNT_DIR}/.ssh/":/var/jenkins_home/.ssh/:rw \
             -v "${JENKINS_ACCOUNT_DIR}/.gitconfig":/var/jenkins_home/.gitconfig:ro \
             -v "${JENKINS_ACCOUNT_DIR}/.netrc":/var/jenkins_home/.netrc:ro \
-	        -d ${BUILD_PODMAN_IMAGE} '${CONTAINER_COMMAND}'"
+            -d ${BUILD_PODMAN_IMAGE} '${CONTAINER_COMMAND}'"
