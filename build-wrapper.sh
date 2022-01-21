@@ -1,10 +1,25 @@
 #!/bin/bash
 set -eo pipefail
+
 readonly HARMONIA_HOME=${HARMONIA_HOME:-"${WORKSPACE}/harmonia/"}
 readonly HARMONIA_DEBUG=${HARMONIA_DEBUG}
 readonly BUILD_COMMAND=${BUILD_COMMAND}
 readonly PARENT_JOB_DIR=${PARENT_JOB_DIR:-'/parent_job/'}
 readonly HARMONIA_SCRIPT=${HARMONIA_SCRIPT}
+
+scriptType() {
+  basename "${0}" | sed -e 's/-wrapper.sh//'
+}
+
+set +u
+readonly SCRIPT_TYPE=$(scriptType)
+if [ "${SCRIPT_TYPE}" = 'build' ]; then
+  readonly BUILD_COMMAND=${BUILD_COMMAND}
+  readonly PARENT_JOB_DIR=${PARENT_JOB_DIR:-'/parent_job/'}
+  readonly HARMONIA_HOME=${HARMONIA_HOME:-"${WORKSPACE}/harmonia/"}
+  readonly HARMONIA_DEBUG=${HARMONIA_DEBUG}
+fi
+
 readonly BUILD_ID=${BUILD_ID}
 readonly JOB_NAME=${JOB_NAME}
 readonly PRINT_BUILD_ENV=${PRINT_BUILD_ENV:-'true'}
